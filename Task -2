@@ -1,0 +1,45 @@
+import cv2
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import load_model
+
+# Load the trained food recognition model
+food_model = load_model('food_recognition_model.h5')
+
+# Load the trained calorie estimation model
+calorie_model = load_model('calorie_estimation_model.h5')
+
+# Load a dictionary mapping class indices to food names
+class_names = np.load('class_names.npy', allow_pickle=True).item()
+
+def preprocess_image(image_path):
+    # Load and preprocess the image
+    img = cv2.imread(image_path)
+    img = cv2.resize(img, (224, 224))  # Resize to match the input size of the model
+    img = img / 255.0  # Normalize pixel values
+    return img
+
+def recognize_food(image_path):
+    img = preprocess_image(image_path)
+    img = np.expand_dims(img, axis=0)  # Add batch dimension
+    predictions = food_model.predict(img)
+    predicted_class = np.argmax(predictions)
+    food_name = class_names[predicted_class]
+    return food_name
+
+def estimate_calories(image_path):
+    img = preprocess_image(image_path)
+    img = np.expand_dims(img, axis=0)  # Add batch dimension
+    predicted_calories = calorie_model.predict(img)[0][0]
+    return predicted_calories
+
+def main():
+    # Example usage
+    image_path = 'test_image.jpg'
+    food_name = recognize_food(image_path)
+    estimated_calories = estimate_calories(image_path)
+    print("Recognized Food:", food_name)
+    print("Estimated Calories:", estimated_calories)
+
+if __name__ == "__main__":
+    main()
